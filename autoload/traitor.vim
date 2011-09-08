@@ -4,8 +4,8 @@ fu! traitor#factory() " {{{
     let factory.traits = {}
     let factory.default_values = {}
     let factory.core_traits = [
-                \ "traitor#core_traits",
-                \ "traitor#debug_traits"
+                \ "traits#core#all",
+                \ "traits#debug#all"
                 \ ]
 
     " Pregister a trait with the factory.
@@ -116,57 +116,7 @@ fu! traitor#factory() " {{{
         return chains
     endfu
 
-    call extend(factory, traitor#debug_traits())
+    call extend(factory, traits#debug#all())
 
     return factory
 endfunction " }}}
-
-" Traits to be applied automatically to all Factory processed objects.
-fu! traitor#core_traits() " {{{
-    let trait = {}
-
-    fu trait.__instance_name() dict
-        if has_key(self, "name")
-            return self.name
-        else
-            return "Nameless"
-        endif
-    endfu
-
-    fu trait.output(message) dict
-        echo printf("%20s expression: %25s", a:message , self.value)
-    endfu
-
-    fu trait.push(message) dict
-        echo printf("%20s says %25s", self.__instance_name(), a:message)
-    endfu
-
-    return trait
-endfu " }}}
-fu! traitor#debug_traits() " {{{
-    let trait = {}
-
-    fu trait.debug_level() dict
-        if has_key(self, "debug")
-            return self.debug
-        else
-            return 0
-        endif
-    endfu
-
-    fu trait.log(message, ...)
-        let debug_level = self.debug_level()
-        let message_level = 3 " default
-        if len(a:000) > 0
-            let message_level = a:000[0]
-        endif
-        if message_level <= debug_level
-            if message_level == 1 | let hl = "ErrorMsg" | endif
-            if message_level == 2 | let hl = "WarningMsg" | endif
-            if message_level == 3 | let hl = "Special" | endif
-            exec "echohl " . hl . "|echomsg a:message |echohl None"
-        endif
-    endfu
-
-    return trait
-endfu " }}}
