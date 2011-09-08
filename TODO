@@ -1,0 +1,37 @@
+DOING {{{
+
++ reimplement taskstack using traitor
+
+@high {{{
+- create doc dir with help files
+-  parameterize all "magic" values
+-  document all customization options
+-  establish naming conventions: Dict of functions is called a `set of traits`, named `module#feature_traits` or `FeatureTraits` individual functions are just functions.
+
+}}}
+@medium {{{
+- update README with documentation from .vim files
+- more gracefully handle non-function values for existing keys
+  - consider each type()
+- project: clean up factory.apply implementation
+- refactor factory.apply into more granular bits
+-  allow traits to set properties as well as functions (force overwrite, if missing, error)
+- register when a set of traits is applied; use this to prevent reapplication of traits
+
+}}}
+@low {{{
+-  establish "reserved" names that cannot be overridden; these could silently fail or make noise.
+
+}}}
+}}}
+COMPLETED {{{
+DATES {{{
+2011-09-07 {{{
+o [2011-09-07 18:15:20 PDT] separate out demo functionality into `autoload/traitor/demo.vim`
+o [2011-09-07 18:14:40 PDT] move items from autoload script into taskstack
+o [2011-09-07 18:11:34 PDT] create taskstack for tracking traitor activity
+
+}}}
+}}}
+}}}
+vim: set ft=tst
