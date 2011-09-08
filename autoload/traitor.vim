@@ -1,5 +1,5 @@
 " Factory for applying traits to objects
-fu! traitor#factory() " {{{
+function! traitor#factory() " {{{
     let factory = {}
     let factory.traits = {}
     let factory.default_values = {}
@@ -44,10 +44,19 @@ fu! traitor#factory() " {{{
     " functions in order.
     "
     fu factory.apply(trait, instance) dict
-        if type(a:trait) != type("")
-            call self.log("Invalid value: trait must be a String.", 1)
-            return a:instance
-        endif
+      if type(a:trait) == type("")
+        call self.__apply(a:trait, a:instance)
+      elseif type(a:trait) == type([])
+        for trait in a:trait
+          call self.__apply(trait, a:instance)
+        endfor
+      else
+        call self.log("Invalid value: trait must be a String or a List of Strings.", 1)
+      endif
+      return a:instance
+    endfu
+
+    fu factory.__apply(trait, instance) dict
         " Mix in some core traits.
         if ! has_key(a:instance, '__core_traits_applied')
             let a:instance['__core_traits_applied'] = 1
