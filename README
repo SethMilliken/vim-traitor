@@ -1,0 +1,7 @@
+Vim Traitor
+
+Traitor is experimental prototype OO framework implementation for vimscript development.
+
+Every time I have tried using oo-style vimscript (c.f. `:help Dictionary-function`), I find myself re-reinventing the object construction framework.
+
+This time, inspired by Scala's traits and recent work with Javascript, I'm trying a new approach that seems quite a bit cleaner than anything I've tried before.
