@@ -23,9 +23,49 @@ DOING {{{
 -  establish "reserved" names that cannot be overridden; these could silently fail or make noise.
 
 }}}
+@notes {{{
+- workflow possibility
+  - construct an object template
+  - call factory.archive(blueprint)
+  - let instance = factory.build(blueprint) 2011-09-08 02:46:17 PDT
+
+- declare trait set dependencies in trait definition
+  - if it requires a property set on instance
+  - if it requires other trait sets
+
+- provide useful examples of polymorphic override capability
+  - update()
+  - emit()
+  - activate()?
+  - decorate()
+  - log()
+
+}}}
+@trait set ideas {{{
+- scope contrainer
+- fold management
+- toggle status indicator of a line
+- unmap all keys in a buffer (map standards to noop?)
+- create and manipulate togglable utility window
+- emit outline of dict as object (with navigable references)
+  - dict with at least one funcref
+  - list
+  - string
+  - funcref
+  - number
+  - in a utility window
+
+}}}
 }}}
 COMPLETED {{{
 DATES {{{
+2011-09-08 {{{
+o [2011-09-08 03:10:23 PDT] move `core` and `debug` traits to `autoload/traits/{feature}`
+o [2011-09-08 03:09:29 PDT] enable factory.apply to take single trait or a list of traits
+o [2011-09-08 03:08:40 PDT] add optional default global factory
+o [2011-09-08 03:08:21 PDT] introspectivity trait experimentation
+
+}}}
 2011-09-07 {{{
 o [2011-09-07 18:57:54 PDT] figure out where to put traits
   x autoload/traits.vim?
