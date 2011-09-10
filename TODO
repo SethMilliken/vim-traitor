@@ -1,25 +1,39 @@
 DOING {{{
 
++ create rspec-like bdd testing framework
 + reimplement taskstack using traitor
 
-@high {{{
+@release {{{
 - create doc dir with help files
--  parameterize all "magic" values
--  document all customization options
--  establish naming conventions: Dict of functions is called a `set of traits`, named `module#feature_traits` or `FeatureTraits` individual functions are just functions.
+- move documentation out of here into help file(s)
+  - traitor-dev
+  - traitor-use
+- parameterize all "magic" values
+- document all customization options
+- document all development conventions
+- document all usage conventions
+- write a handful of genuinely useful traitsets that demonstrate the flexibility and ease of using this system
+- write well-commented sample application code that uses these traitsets
+- clean up the debug and core traitsets
+- determine what functionality is essential to the core traitset
 
 }}}
-@medium {{{
-- update README with documentation from .vim files
+@next {{{
+- add introspection mechanism to use a (no-op?) line from trait impelmentation to document that trait
+  = i.e. examine the function body and extract the documentation with a regex
+- update README with documentation from all the .vim files
 - more gracefully handle non-function values for existing keys
   - consider each type()
 - project: clean up factory.apply implementation
-- refactor factory.apply into more granular bits
--  allow traits to set properties as well as functions (force overwrite, if missing, error)
-- register when a set of traits is applied; use this to prevent reapplication of traits
+  - use `fast_apply`'d core or factory traits to implement
+  - more granular with overridable inflection points
+- allow traitsets to set properties as well as methods (force overwrite, if missing, error)
+  ? use a naming convention to determine what to do
+- traitset to apply and validate conventions  
 
 }}}
-@low {{{
+@backlog {{{
+- TODO and FIXME notation  TODO:#### is a todo for the project (could use git to detect github repo's bug system to use)
 -  establish "reserved" names that cannot be overridden; these could silently fail or make noise.
 
 }}}
@@ -40,10 +54,98 @@ DOING {{{
   - decorate()
   - log()
 
+? could there be rewrite method problems with methods with args
+  e.g. rewrite trait traits.do_something(this, that)
+  get its funcref, stuff it into __do_something1
+  write new enclosing function `do_something(...)`
+  does this actually work? what are the argument types?
+- renumber items in a list
+  - as you move them
+  - all at once
+    - notation for `guarding` certain numbers from being renumbered dynamically
+- use processing of :function {###} to do validation of traitsets, traits, etc.
+  - post processed functions means we'll have the expanded form of 'exec' lines to parse
+  - use this mechanism for self-documentation
+- object interfaces
+  - type `:f 22` to show processed contents of :function {22}
+  - type `:f object` to show object
+  - trait to display an object (c.f. inspect, to_yaml, to_s, toString(), etc.)
+    - can be overridden for custom display
+      - e.g. one object could just emit `[Opaque]`
+  
+- call backs?
+  - instance.handle_foo(funcref)
+  - called code uses funcref to callback at end
+- or delegation? 
+  - instance.do_something(delegate)
+
+   # sample code
+   fu traits.do_something(...) dict " {{{
+      if len(a:000) > 0 && type(a:000[0]) == type({}) && has_key(a:000[0], "will_close_buffer") && if delegate.will_close_buffer()
+        ... close buffer ...
+      else
+        ... default behavior ...
+      endif
+    endfu " }}}
+    
+  - call Delegate().delegate(object, "will_close_buffer")
+
+    # naive delegation implementation fragment
+    fu trait.delegate(to, what) " {{{
+      if type(to) == type({}) && has_key(to, a:what)
+        return exec "to." . a:what . "()"
+      endif
+    endfu " }}}
+
+- delegation inspired behavior. don't like the implementation of an aspect of something? override just that function at runtime.
+  - or only change it for a particular instance
+- callback-based switch-like behavior
+
+# sample switch trait usage code
+fu traits.do_something(...) dict " {{{
+  # only define the behavior that you need to handle
+  # uses switch? traitset
+  let switch = {}
+  fu switch.is_number(...)
+  endfu
+  fu switch.is_funcref(...)
+  endfu
+  fu switch.is_list(...)
+  endfu
+  fu switch.is_string(...)
+  endfu
+  fu switch.handle_error(...)
+  endfu
+  call switch.dispatch(self, a:000)
+endfu " }}}
+
+# code for switch trait
+# the trait always takes (object, ...)
+fu dispatch(object, ...) " {{{
+  let argument = a:000[1]
+  if type(argument) == type(0)
+    if has_key(a:object, "is_number")
+      call a:object.is_number(a:000[1:])
+    end
+  elseif type(argument) == type("")
+    if has_key(a:object, "is_string)
+      call a:object.is_string(a:000[1:])
+    end
+  ....
+  else
+    if has_key(a:object, "default)
+      call a:object.default(a:000[1:])
+    elseif has_key(a:object, "handle_error")
+      call a:object.handle_error(a:000[1:])
+    endif
+  endif
+endfu " }}}
+
 }}}
 @trait set ideas {{{
 - scope contrainer
 - fold management
+  - [un]fold all folds containing /regex/
 - toggle status indicator of a line
 - unmap all keys in a buffer (map standards to noop?)
 - create and manipulate togglable utility window
@@ -54,11 +156,73 @@ DOING {{{
   - funcref
   - number
   - in a utility window
+- wiki-like functionality: navigation
+- detector traitset: parse e.g. email address or addresses out of a line
+  - trait#detector.email_address calls email_addresses[0]
+    - trait#detector.email_address returns [] of all addresses in line
+  - likewise for URLs, bug #s, todo, fixme, etc. 
+- a parse trait could just parse any input: could deal with single word, line, paragraph, buffer, etc
+
+}}}
+@app ideas {{{
+- interface to github bug system (or any, really) using detectors and the github api
+- snippet engine
+- test framework
+- markup post-processing engine
+
+}}}
+@conventions {{{
++ `object` shall describe any Dict containing methods that make use of `self` references.
++ `instance` shall describe an object whose methods are meant to called.
++ `method` shall describe a key set on an object containing a Funcref value.
++ `trait` shall describe a method intended to be applied to an object to provide a feature
++ `traitset` shall refer to an object that contains a set of traits meant to be applied to instances.
++ `property` shall refer to a key set on an object containing a value that is not a Funcref.
+
+- a traitset should be returned by `traits#feature#all()` or `TraitsetFeature()`
+- a traitset in the filesystem `autoload/traits/feature.vim`
+- trait function delcarations should use `fu`
+- traitset function delcarations should use `fun!`
+- traitset function delcarations should use `dict`
+- function delcarations for methods intended for external consumption should use `dict`
+- function delcarations for private methods intended only for internal implemenation should NOT use `dict`
+- traits and traitsets should be wrapped commended foldmarkers
+- there should be a single line between each trait in a traitset
+- a function declaration for a function that returns a usable instance of an object should use `func!`
+? format of documentation
+? indicators of private methods and properties
+? should keys for methods be distinguisable from keys for properties
+
+" Short <feature> description here.
+fun! traits#<feature>#all() " {{{
+  let traits = {}
+
+  fu traits.<method1>(<arguments>) dict " <argument types>
+    ...
+  endfu
+
+  fu traits.<method2>(<arguments>) dict " <argument types>
+    ...
+  endfu
+
+  return traits
+endfun " }}}
 
 }}}
 }}}
 COMPLETED {{{
 DATES {{{
+2011-09-09 {{{
+o [2011-09-09 23:39:51 PDT] added a whole slew of brainstorming ideas
+o [2011-09-09 18:04:35 PDT] establish some conventions for naming and code formatting
+o [2011-09-09 17:46:18 PDT] add method to reset the traitset cache of a factory
+o [2011-09-09 17:44:36 PDT] rework bootstrap mechanism to apply traits needed in the factory method implementations themselves
+o [2011-09-09 17:44:23 PDT] add FactoryNew() to create a new non-global factory.
+o [2011-09-09 17:44:21 PDT] register when a set of traits is applied; use this to prevent reapplication of traits
+o [2011-09-09 17:08:41 PDT] implement FactoryReset() to aid in development of traitsets (and the factory itself)
+  = sets the global factory to a new factory instance
+
+}}}
 2011-09-08 {{{
 o [2011-09-08 03:10:23 PDT] move `core` and `debug` traits to `autoload/traits/{feature}`
 o [2011-09-08 03:09:29 PDT] enable factory.apply to take single trait or a list of traits
