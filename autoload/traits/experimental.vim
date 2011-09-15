@@ -7,7 +7,7 @@ fun! traits#experimental#all() " {{{
         let recursive = 1
       else
         let recursive = 0
-      endif 
+      endif
       if type(a:object) == type("") && recursive == 1
         call self.report("String:")
         call self.i_up()
