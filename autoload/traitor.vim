@@ -1,49 +1,58 @@
 " Factory for applying traits to objects
-function! traitor#factory() " {{{
+func! traitor#factory() " {{{
     let factory = {}
-    let factory.traits = {}
-    let factory.default_values = {}
-    let factory.core_traits = [
-                \ "traits#core#all",
-                \ "traits#debug#all"
-                \ ]
+    let factory.__applied_traits = []
+    let factory.debug = 3
+    " let factory.debug = 0
 
-    " Pregister a trait with the factory.
-    fu factory.add(trait, name) dict
-        return self.fetch(a:trait, a:name)
-    endfu
+    fu factory.reset_defaults() dict " {{{
+        let self.traits = {}
+        let self.default_properties = {
+                    \ "__reserved_for_future_use": []
+                    \ }
+        let self.core_traits = [
+                    \ "traits#core#all",
+                    \ "traits#debug#all"
+                    \ ]
+    endfu " }}}
+    call factory.reset_defaults()
 
-    " Retrieve a set of traits by name. Optionally, store the trait under a
-    " different name.
-    fu factory.fetch(trait, ...) dict
-        let trait_name = a:trait
+    " Pre-register a single traitset with the factory.
+    fu factory.add(traitset, name) dict " {{{
+        return self.fetch(a:traitset, a:name)
+    endfu " }}}
+
+    " Retrieve a traitset by name. Optionally, store the traitset under a
+    " different name. Cache the trait.
+    fu factory.fetch(traitset, ...) dict " {{{
+        let traitset_name = a:traitset
         if len(a:000) > 0
-            let trait_name = a:000[0]
+            let traitset_name = a:000[0]
         end
-        if ! has_key(self.traits, trait_name)
+        if ! has_key(self.traits, traitset_name)
             try
-                "let self.traits.{"" . trait_name . ""} = {a:trait}()
-                exec "let self.traits['" . trait_name . "'] = {a:trait}()"
+                "let self.traits.{"" . traitset_name . ""} = {a:traitset}()
+                exec "let self.traits['" . traitset_name . "'] = {a:traitset}()"
             catch /.*/
-                call self.log("'" . trait_name . "' is not available.
+                call self.log("Traitset '" . traitset_name . "' not found.
                             \ Do you have a function by that name that returns a Dict of Funcrefs?", 2)
-                exec "let self.traits['" . trait_name . "'] = {}"
+                exec "let self.traits['" . traitset_name . "'] = {}"
             endtry
         endif
-        exec "return self.traits['" . trait_name . "']"
-    endfu
+        exec "return self.traits['" . traitset_name . "']"
+    endfu " }}}
 
-    " Apply trait to instance
+    " Apply traitset to instance
     "
-    " Copy all functions from a given trait onto a given instance.  If there
+    " Copy all functions from a given traitset onto a given instance.  If there
     " is already an existing function for a key or any `__functionname#`
     " variations that may have already been created by `apply`, move them to
     " new series of `__functionname#` functions, add the new function from the
-    " trait as a `__functionname#` function at the end of the series, then "
+    " traitset as a `__functionname#` function at the end of the series, then "
     " create a new `functionname` method that calls the `__functioname#`
     " functions in order.
     "
-    fu factory.apply(trait, instance) dict
+    fu factory.apply(trait, instance) dict " < String | List[String] >, <Dict> " {{{
       if type(a:trait) == type("")
         call self.__apply(a:trait, a:instance)
       elseif type(a:trait) == type([])
@@ -51,22 +60,27 @@ function! traitor#factory() " {{{
           call self.__apply(trait, a:instance)
         endfor
       else
-        call self.log("Invalid value: trait must be a String or a List of Strings.", 1)
+        call self.log("Invalid value: traitset must be a String or a List of Strings.", 1)
       endif
       return a:instance
-    endfu
+    endfu " }}}
 
-    fu factory.__apply(trait, instance) dict
+    fu factory.__apply(trait, instance) dict " <String>, <Dict> " {{{
         " Mix in some core traits.
+        if index(self.__applied_traits, a:trait) > 0
+            self.log("Already applied traitset " . a:trait, 2)
+            finish
+        end
         if ! has_key(a:instance, '__core_traits_applied')
+            exec "let a:instance['__applied_traits'] = []"
             let a:instance['__core_traits_applied'] = 1
             for traits in self.core_traits
                 call self.apply(traits, a:instance)
             endfor
-            call self.log("Applied core traits to instance: " . a:instance.__instance_name())
+            call self.log("Applied core traitset to instance: " . a:instance.__instance_name())
             if ! has_key(a:instance, '__default_values_applied')
                 let a:instance['__default_values_applied'] = 1
-                for item in items(self.default_values)
+                for item in items(self.default_properties)
                     exec "let a:instance['" . item[0] . "'] = " . item[1]
                 endfor
                 call self.log("Applied default values to instance: " . a:instance.__instance_name())
@@ -113,9 +127,9 @@ function! traitor#factory() " {{{
             endif
         endfor
         return a:instance
-    endfu
+    endfu " }}}
 
-    fu factory.find_chains(instance, key) dict
+    fu factory.find_chains(instance, key) dict " {{{
         let chains = []
         for key in keys(a:instance)
             if match(key, a:key) > -1
@@ -123,9 +137,26 @@ function! traitor#factory() " {{{
             endif
         endfor
         return chains
-    endfu
+    endfu " }}}
 
-    call extend(factory, traits#debug#all())
+    fu factory.reset_cache() dict " {{{
+        let self.traits = {}
+        call self.log("Factory trait cache reset.", 3)
+    endfu " }}}
+
+    fu factory.fast_apply(traitset, instance) dict " {{{
+        let traitset = {}
+        exec "let traitset = " . a:traitset . "()"
+        call extend(a:instance, traitset)
+        call add(self.__applied_traits, a:traitset)
+        if has_key(self, "traits")
+            exec "call extend(self.traits, { '" . a:traitset . "': traitset} )"
+        end
+    endfu " }}}
+
+    call factory.fast_apply("traits#core#all", factory)
+    call factory.fast_apply("traits#debug#all", factory)
+    call factory.log("Factory bootstrapped with traits required in function implementations.", 3)
 
     return factory
-endfunction " }}}
+endfunc " }}}
