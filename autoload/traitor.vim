@@ -2,8 +2,7 @@
 func! traitor#factory() " {{{
     let factory = {}
     let factory.__applied_traits = []
-    let factory.debug = 3
-    " let factory.debug = 0
+    let factory.debug = 0
 
     fu factory.reset_defaults() dict " {{{
         let self.traits = {}
