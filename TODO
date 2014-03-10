@@ -29,7 +29,7 @@ DOING {{{
   - more granular with overridable inflection points
 - allow traitsets to set properties as well as methods (force overwrite, if missing, error)
   ? use a naming convention to determine what to do
-- traitset to apply and validate conventions  
+- traitset to apply and validate conventions
 
 }}}
 @backlog {{{
